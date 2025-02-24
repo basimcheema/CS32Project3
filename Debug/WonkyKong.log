@@ -1,0 +1,8 @@
+﻿  Actor.cpp
+  StudentWorld.cpp
+C:\Users\basim\Downloads\WonkyKong-skeleton-win\WonkyKong\WonkyKong\StudentWorld.cpp(81,23): warning C4018: '<': signed/unsigned mismatch
+C:\Users\basim\Downloads\WonkyKong-skeleton-win\WonkyKong\WonkyKong\StudentWorld.cpp(92,23): warning C4018: '<': signed/unsigned mismatch
+C:\Users\basim\Downloads\WonkyKong-skeleton-win\WonkyKong\WonkyKong\StudentWorld.cpp(108,23): warning C4018: '<': signed/unsigned mismatch
+  Generating Code...
+C:\Users\basim\Downloads\WonkyKong-skeleton-win\WonkyKong\WonkyKong\StudentWorld.cpp(76,1): warning C4715: 'StudentWorld::init': not all control paths return a value
+  WonkyKong.vcxproj -> C:\Users\basim\Downloads\WonkyKong-skeleton-win\WonkyKong\Debug\WonkyKong.exe
