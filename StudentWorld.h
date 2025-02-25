@@ -17,9 +17,15 @@ public:
   virtual int move();
   virtual void cleanUp();
   bool hasFloor(int x, int y);
+  bool hasClimbable(int x, int y);
+  Actor* getPlayer();
+  int getBurps();
+  void incBurps();
+  void decBurps();
 private:
 	Level* lev;
 	std::vector <Actor*> actors;
+	int burps;
 };
 
 #endif // STUDENTWORLD_H_

@@ -40,6 +40,7 @@ int StudentWorld::init()
                     break;
                 case Level::ladder:
                     cerr << x << "," << y << " , 10 is a Ladder\n";
+                    actors.push_back(new Ladder(x, y, this));
                     break;
                 case Level::left_kong:
                     cerr << x << "," << y << " is a left - facing Kong\n";
@@ -55,12 +56,15 @@ int StudentWorld::init()
                     break;
                 case Level::bonfire:
                     cerr << x << "," << y << " is a Bonfire\n";
+                    actors.push_back(new Bonfire(x, y, this));
                     break;
                 case Level::extra_life:
                     cerr << x << "," << y << " is an Extra Life Goodie\n";
+                    actors.push_back(new ExtraLifeGoodie(x, y, this));
                     break;
                 case Level::garlic:
                     cerr << x << "," << y << " is a Garlic Goodie\n";
+                    actors.push_back(new GarlicGoodie(x, y, this));
                     break;
                 case Level::player:
                     cerr << x << "," << y << " is where the Player starts\n";
@@ -78,10 +82,23 @@ int StudentWorld::init()
 
 int StudentWorld::move()
 {
+    if (!getPlayer()->isAlive()) {
+        return GWSTATUS_PLAYER_DIED;
+    }
     // This code is here merely to allow the game to build, run, and terminate after you type q
     for (int i = 0; i < actors.size(); i++) {
         if (actors[i] != nullptr)
             actors[i]->doSomething();
+    }
+
+    if (getPlayer()->isAlive()) {
+        for (int i = 0; i < actors.size(); i++) {
+            if (!actors[i]->isAlive()) {
+                delete actors[i];
+                actors[i] = nullptr;
+                actors.erase(actors.begin() + i);
+            }
+        }
     }
     setGameStatText("Game will end when you type q");
     
@@ -96,8 +113,9 @@ void StudentWorld::cleanUp()
             actors[i] = nullptr;
         }
     }
-    delete lev;
-    lev = nullptr;
+
+    actors.clear();
+    
     setGameStatText("Game will end when you type q");
 }
 
@@ -112,4 +130,34 @@ bool StudentWorld::hasFloor(int x, int y) {
         }
     }
     return false;
+}
+
+bool StudentWorld::hasClimbable(int x, int y) {
+    for (int i = 0; i < actors.size(); i++) {
+        if (actors[i]->getX() == x && actors[i]->getY() == y && actors[i]->isClimbable()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+Actor* StudentWorld::getPlayer() {
+    for (int i = 0; i < actors.size(); i++) {
+        if (actors[i]->isPlayer()) {
+            return actors[i];
+        }
+    }
+    return nullptr;
+}
+
+int StudentWorld::getBurps() {
+    return burps;
+}
+
+void StudentWorld::incBurps() {
+    burps++;
+}
+
+void StudentWorld::decBurps() {
+    burps--;
 }
