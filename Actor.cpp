@@ -66,6 +66,10 @@ void Actor::getAttacked() {
 	return;
 }
 
+void Actor::getFrozen() {
+
+}
+
 //PLAYER IMPLEMENTATION
 Player::Player(int x, int y, StudentWorld* home) : Actor(IID_PLAYER, x, y, right, home) {
 	//construct
@@ -82,6 +86,12 @@ void Player::doSomething()
 		jump();
 		return;
 	}
+
+	if (freeze_state > 0) {
+		freeze_state--;
+		return;
+	}
+
 	if (gravity())
 		return;
 	int ch;
@@ -173,6 +183,10 @@ void Player::getAttacked() {
 
 }
 
+void Player::getFrozen() {
+	freeze_state = 50;
+}
+
 //STATIONARY IMPLEMENTATION
 Stationary::Stationary(int id, int x, int y, StudentWorld* home) : Actor(id, x, y, none, home) {
 	
@@ -219,12 +233,11 @@ void Bonfire::doSomething() {
 }
 
 bool Bonfire::attack() {
-	if (getX() == getWorld()->getPlayer()->getX() && getY() == getWorld()->getPlayer()->getY()) {
-		getWorld()->getPlayer()->getAttacked();
+	if (getWorld()->playerIsHere(getX(), getY())) {
+		getWorld()->attackPlayer();
 		return true;
 	}
-	else
-		return false;
+	return false;
 }
 
 
@@ -233,7 +246,7 @@ Goodie::Goodie(int id, int x, int y, StudentWorld* home) : Actor(id, x, y, none,
 
 }
 void Goodie::doSomething() {
-	if (getWorld()->getPlayer()->getX() == getX() && getWorld()->getPlayer()->getY() == getY()) {
+	if (getWorld()->playerIsHere(getX(), getY())) {
 		getPickedUp();
 	}
 	if (isAlive())
@@ -267,4 +280,81 @@ void GarlicGoodie::getPickedUp() {
 	for (int i = 0; i < 5; i++) {
 		getWorld()->incBurps();
 	}
+}
+
+//ENEMY IMPLEMENTATION
+Enemy::Enemy(int id, int x, int y, int dir, StudentWorld* home) : Actor(id, x, y, dir, home) {
+	tick_num = 0;
+}
+
+int Enemy::getTick() {
+	return tick_num;
+}
+
+void Enemy::setTick(int num) {
+	tick_num = num;
+}
+
+void Enemy::incTick() {
+	tick_num++;
+}
+
+void Enemy::changeDir() {
+	if (getDirection() == right) {
+		setDirection(left);
+	}
+	else if (getDirection() == left) {
+		setDirection(right);
+	}
+}
+
+void Enemy::getAttacked() {
+
+}
+
+//KOOPA IMPLEMENTATION
+Koopa::Koopa(int x, int y, StudentWorld* home) : Enemy(IID_KOOPA, x, y, randInt(1, 2) % 2 ? right : left, home) {
+	freeze_timer = 0;
+}
+
+void Koopa::doSomething() {
+	incTick();
+	if (!isAlive())
+		return;
+	if (getWorld()->playerIsHere(getX(), getY()) && freeze_timer == 0) {
+		freeze_timer = 50;
+		attack();
+	}
+	if (freeze_timer > 0) {
+		freeze_timer--;
+	}
+	if (getTick() == 10) {
+		move();
+		setTick(0);
+	}
+}
+
+bool Koopa::attack() {
+	getWorld()->freezePlayer();
+	return true;
+}
+
+void Koopa::move() {
+	int nextX, nextY;
+	getPositionInThisDirection(getDirection(), 1, nextX, nextY);
+	if (getWorld()->hasClimbable(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1) || getWorld()->hasFloor(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1)) {
+		moveTo(nextX, nextY);
+	}
+	else {
+		changeDir();
+		return;
+	}
+}
+
+void Koopa::getAttacked() {
+	setDead();
+	getWorld()->playSound(SOUND_ENEMY_DIE);
+	getWorld()->increaseScore(100);
+	if (randInt(1, 3) == 1)
+		getWorld()->addActor(new ExtraLifeGoodie(getX(), getY(), getWorld()));
 }

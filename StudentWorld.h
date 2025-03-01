@@ -16,13 +16,18 @@ public:
   virtual int init();
   virtual int move();
   virtual void cleanUp();
+  bool playerIsHere(int x, int y);
   bool hasFloor(int x, int y);
   bool hasClimbable(int x, int y);
-  Actor* getPlayer();
+  bool attackActorAt(int x, int y);
   int getBurps();
+  void attackPlayer();
   void incBurps();
   void decBurps();
+  void freezePlayer();
+  void addActor(Actor* newActor);
 private:
+	Actor* getPlayer();
 	Level* lev;
 	std::vector <Actor*> actors;
 	int burps;

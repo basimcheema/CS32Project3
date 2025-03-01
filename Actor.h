@@ -9,7 +9,8 @@ class StudentWorld;
 class Actor : public GraphObject {
 public:
 	Actor(int id, int x, int y, int dir, StudentWorld* home);
-	virtual void doSomething();
+	virtual void doSomething() = 0;
+	virtual void getFrozen();
 	StudentWorld* getWorld();
 	bool isAlive();
 	void setDead();
@@ -32,9 +33,11 @@ public:
 	void doSomething();
 	bool isPlayer();
 	void getAttacked();
+	void getFrozen();
 private:
 	void jump();
 	int jump_state;
+	int freeze_state;
 };
 
 class Stationary : public Actor {
@@ -99,9 +102,26 @@ private:
 
 class Enemy : public Actor {
 public:
-	Enemy(int id, int x, int y, StudentWorld* home);
+	Enemy(int id, int x, int y, int dir, StudentWorld* home);
+	virtual void doSomething() = 0;
+	virtual bool attack() = 0;
 	virtual void getAttacked();
-	virtual bool attack();
+	int getTick();
+	void setTick(int num);
+	void incTick();
+	void changeDir();
 private:
+	int tick_num;
+};
+
+class Koopa : public Enemy {
+public:
+	Koopa(int x, int y, StudentWorld* home);
+	void doSomething();
+	bool attack();
+	void move();
+	void getAttacked();
+private:
+	int freeze_timer;
 };
 #endif // ACTOR_H_

@@ -15,6 +15,7 @@ GameWorld* createStudentWorld(string assetPath)
 StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
+    burps = 0;
 }
 
 int StudentWorld::init()
@@ -53,6 +54,7 @@ int StudentWorld::init()
                     break;
                 case Level::koopa:
                     cerr << x << "," << y << " is a Koopa\n";
+                    actors.push_back(new Koopa(x, y, this));
                     break;
                 case Level::bonfire:
                     cerr << x << "," << y << " is a Bonfire\n";
@@ -100,7 +102,7 @@ int StudentWorld::move()
             }
         }
     }
-    setGameStatText("Game will end when you type q");
+    setGameStatText("helpppp");
     
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -160,4 +162,30 @@ void StudentWorld::incBurps() {
 
 void StudentWorld::decBurps() {
     burps--;
+}
+
+bool StudentWorld::attackActorAt(int x, int y) {
+    for (int i = 0; i < actors.size(); i++) {
+        if (actors[i]->getX() == x && actors[i]->getY() == y) {
+            actors[i]->getAttacked();
+            return true;
+        }
+    }
+    return false;
+}
+
+void StudentWorld::attackPlayer() {
+    getPlayer()->getAttacked();
+}
+
+bool StudentWorld::playerIsHere(int x, int y) {
+    return getPlayer()->getX() == x && getPlayer()->getY() == y;
+}
+
+void StudentWorld::freezePlayer() {
+    getPlayer()->getFrozen();
+}
+
+void StudentWorld::addActor(Actor* newActor) {
+    actors.push_back(newActor);
 }
