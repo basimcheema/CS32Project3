@@ -79,7 +79,7 @@ class Goodie : public Actor {
 public:
 	Goodie(int id, int x, int y, StudentWorld* home);
 	virtual void doSomething();
-	virtual void getPickedUp();
+	virtual void getPickedUp() = 0;
 private:
 
 };
@@ -105,7 +105,7 @@ public:
 	Enemy(int id, int x, int y, int dir, StudentWorld* home);
 	virtual void doSomething() = 0;
 	virtual bool attack() = 0;
-	virtual void getAttacked();
+	virtual void getAttacked() = 0;
 	int getTick();
 	void setTick(int num);
 	void incTick();
@@ -119,9 +119,21 @@ public:
 	Koopa(int x, int y, StudentWorld* home);
 	void doSomething();
 	bool attack();
-	void move();
 	void getAttacked();
 private:
+	void move();
 	int freeze_timer;
+};
+
+class Fireball : public Enemy {
+public:
+	Fireball(int x, int y, StudentWorld* home);
+	void doSomething();
+	bool attack();
+	void getAttacked();
+private:
+	void move();
+	int climb_state;
+
 };
 #endif // ACTOR_H_

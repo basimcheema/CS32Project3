@@ -252,9 +252,6 @@ void Goodie::doSomething() {
 	if (isAlive())
 		return;
 }
-void Goodie::getPickedUp() {
-	return;
-}
 
 //EXTRA LIFE GOODIE IMPLEMENTATION
 ExtraLifeGoodie::ExtraLifeGoodie(int x, int y, StudentWorld* home) : Goodie(IID_EXTRA_LIFE_GOODIE, x, y, home) {
@@ -308,12 +305,8 @@ void Enemy::changeDir() {
 	}
 }
 
-void Enemy::getAttacked() {
-
-}
-
 //KOOPA IMPLEMENTATION
-Koopa::Koopa(int x, int y, StudentWorld* home) : Enemy(IID_KOOPA, x, y, randInt(1, 2) % 2 ? right : left, home) {
+Koopa::Koopa(int x, int y, StudentWorld* home) : Enemy(IID_KOOPA, x, y, randInt(1, 2) == 1 ? right : left, home) {
 	freeze_timer = 0;
 }
 
@@ -328,7 +321,7 @@ void Koopa::doSomething() {
 	if (freeze_timer > 0) {
 		freeze_timer--;
 	}
-	if (getTick() == 10) {
+	if (getTick() % 10 == 0) {
 		move();
 		setTick(0);
 	}
@@ -342,7 +335,7 @@ bool Koopa::attack() {
 void Koopa::move() {
 	int nextX, nextY;
 	getPositionInThisDirection(getDirection(), 1, nextX, nextY);
-	if (getWorld()->hasClimbable(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1) || getWorld()->hasFloor(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1)) {
+	if (!getWorld()->hasFloor(nextX, nextY) && (getWorld()->hasClimbable(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1) || getWorld()->hasFloor(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1))) {
 		moveTo(nextX, nextY);
 	}
 	else {
@@ -357,4 +350,69 @@ void Koopa::getAttacked() {
 	getWorld()->increaseScore(100);
 	if (randInt(1, 3) == 1)
 		getWorld()->addActor(new ExtraLifeGoodie(getX(), getY(), getWorld()));
+}
+
+//FIREBALL IMPLEMENTATION
+Fireball::Fireball(int x, int y, StudentWorld* home) : Enemy(IID_FIREBALL, x, y, randInt(1, 2) == 1 ? right : left, home) {
+	climb_state = none;
+}
+
+void Fireball::doSomething() {
+	incTick();
+	if (!isAlive()) {
+		return;
+	}
+	if (getWorld()->playerIsHere(getX(), getY())) {
+		attack();
+		return;
+	}
+	if (getTick() % 10 == 0) {
+		move();
+		setTick(0);
+	}
+}
+
+bool Fireball::attack() {
+	getWorld()->attackPlayer();
+	return true;
+}
+
+void Fireball::move() {
+	if (getWorld()->hasClimbable(getX(), getY()) && !getWorld()->hasFloor(getX(), getY() + 1) && climb_state != down) {
+		if (climb_state == up || randInt(1, 3) == 1) {
+			climb_state = up;
+			moveTo(getX(), getY() + 1);
+		}
+	}
+	else if (getWorld()->hasClimbable(getX(), getY() - 1) && climb_state != up) {
+		if (climb_state == down || randInt(1, 3) == 1) {
+			climb_state = down;
+			moveTo(getX(), getY() - 1);
+		}
+	}
+	else {
+		climb_state = none;
+	}
+	if (climb_state == none) {
+		int nextX, nextY;
+		getPositionInThisDirection(getDirection(), 1, nextX, nextY);
+		if (!getWorld()->hasFloor(nextX, nextY) && (getWorld()->hasClimbable(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1) || getWorld()->hasFloor(getDirection() == right ? getX() + 1 : getX() - 1, getY() - 1))) {
+			moveTo(nextX, nextY);
+		}
+		else {
+			changeDir();
+		}
+	}
+	if (getWorld()->playerIsHere(getX(), getY())) {
+		attack();
+		return;
+	}
+}
+
+void Fireball::getAttacked() {
+	setDead();
+	getWorld()->playSound(SOUND_ENEMY_DIE);
+	getWorld()->increaseScore(100);
+	if (randInt(1, 3) == 1)
+		getWorld()->addActor(new GarlicGoodie(getX(), getY(), getWorld()));
 }

@@ -51,6 +51,7 @@ int StudentWorld::init()
                     break;
                 case Level::fireball:
                     cerr << x << "," << y << " is a Fireball\n";
+                    actors.push_back(new Fireball(x, y, this));
                     break;
                 case Level::koopa:
                     cerr << x << "," << y << " is a Koopa\n";
