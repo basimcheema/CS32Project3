@@ -1,7 +1,7 @@
 #include "Actor.h"
 #include "GameConstants.h"
 #include "StudentWorld.h"
- 
+
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 
 //ACTOR IMPLEMENTATION
@@ -70,6 +70,15 @@ void Actor::getFrozen() {
 
 }
 
+bool Actor::isBarrelBurner() {
+	return false;
+}
+
+bool Actor::isBurpable() {
+	return false;
+}
+
+
 //PLAYER IMPLEMENTATION
 Player::Player(int x, int y, StudentWorld* home) : Actor(IID_PLAYER, x, y, right, home) {
 	//construct
@@ -125,9 +134,15 @@ void Player::doSomething()
 			//... initiate jump ... 
 			jump_state = 0;
 			jump();
+			getWorld()->playSound(SOUND_JUMP);
 			break;
 		case KEY_PRESS_TAB:
-			//burp if you have burps left ...
+			if (getWorld()->getBurps() > 0) {
+				int newX, newY;
+				getPositionInThisDirection(getDirection(), 1, newX, newY);
+				getWorld()->addActor(new Burp(newX, newY, getDirection(), getWorld()));
+				getWorld()->decBurps();
+			}
 			break;
 		}
 	}
@@ -179,6 +194,7 @@ bool Player::isPlayer() {
 void Player::getAttacked() {
 	getWorld()->playSound(SOUND_PLAYER_DIE);
 	getWorld()->decLives();
+	getWorld()->setBurps(0);
 	setDead();
 
 }
@@ -238,6 +254,10 @@ bool Bonfire::attack() {
 		return true;
 	}
 	return false;
+}
+
+bool Bonfire::isBarrelBurner() {
+	return true;
 }
 
 
@@ -303,6 +323,10 @@ void Enemy::changeDir() {
 	else if (getDirection() == left) {
 		setDirection(right);
 	}
+}
+
+bool Enemy::isBurpable() {
+	return true;
 }
 
 //KOOPA IMPLEMENTATION
@@ -415,4 +439,112 @@ void Fireball::getAttacked() {
 	getWorld()->increaseScore(100);
 	if (randInt(1, 3) == 1)
 		getWorld()->addActor(new GarlicGoodie(getX(), getY(), getWorld()));
+}
+
+
+//BARREL IMPLEMENTATION
+Barrel::Barrel(int x, int y, int dir, StudentWorld* home) : Enemy(IID_BARREL, x, y, dir, home) {
+
+}
+
+void Barrel::doSomething() {
+	incTick();
+	if (!isAlive()) {
+		return;
+	}
+	if (getWorld()->playerIsHere(getX(), getY())) {
+		getWorld()->attackPlayer();
+		return;
+	}
+	if (getWorld()->hasBarrelBurnerAt(getX(), getY())) {
+		setDead();
+		return;
+	}
+	if (!getWorld()->hasFloor(getX(), getY() - 1)) {
+		moveTo(getX(), getY()-1);
+		if (getWorld()->hasFloor(getX(), getY() - 1)) {
+			changeDir();
+		}
+	}
+	int newX, newY;
+	if (getTick() >= 10) {
+		getPositionInThisDirection(getDirection(), 1, newX, newY);
+		setTick(0);
+		if (!attemptMoveTo(newX, newY)) {
+			changeDir();
+		}
+		if (getWorld()->playerIsHere(getX(), getY())) {
+			attack();
+			return;
+		}
+	}
+}
+
+bool Barrel::attack() {
+	getWorld()->attackPlayer();
+	return true;
+}
+
+void Barrel::getAttacked() {
+	setDead();
+	getWorld()->playSound(SOUND_ENEMY_DIE);
+	getWorld()->increaseScore(100);
+}
+
+
+
+//BURP IMPLEMENTATION
+Burp::Burp(int x, int y, int dir, StudentWorld* home) : Actor(IID_BURP, x, y, dir, home) {
+	ticks = 5;
+}
+
+void Burp::doSomething() {
+	if (!isAlive()) {
+		return;
+	}
+	ticks--;
+	if (ticks == 0) {
+		setDead();
+		return;
+	}
+	getWorld()->attackBurpableActorAt(getX(), getY());
+}
+
+
+//KONG IMPLEMENTATION
+Kong::Kong(int x, int y, int dir, StudentWorld* home) : Actor(IID_KONG, x, y, dir, home) {
+	flee_state = false;
+	barrel_ticks = 0;
+	flee_ticks = 0;
+}
+
+void Kong::doSomething() {
+	barrel_ticks++;
+	flee_ticks++;
+	if (!isAlive()) {
+		return;
+	}
+	increaseAnimationNumber();
+	if (getWorld()->distanceToPlayerSquared(this) <= 4) {
+		flee_state = true;
+	}
+	int N = std::max(200 - 50 * getWorld()->getLevel(), 50);
+	if (!flee_state && barrel_ticks >= N) {
+		barrel_ticks = 0;
+		int newX, newY;
+		getPositionInThisDirection(getDirection(), 1, newX, newY);
+		getWorld()->addActor(new Barrel(newX, newY, getDirection(), getWorld()));
+	}
+	if (flee_ticks >= 5) {
+		if (flee_state) {
+			int x, y;
+			getPositionInThisDirection(up, 1, x, y);
+			moveTo(x, y);
+			if (y == VIEW_HEIGHT) {
+				getWorld()->increaseScore(1000);
+				getWorld()->playSound(SOUND_FINISHED_LEVEL);
+				getWorld()->setLevelFinished();
+			}
+		}
+	}
 }

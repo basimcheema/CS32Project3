@@ -19,18 +19,26 @@ public:
   bool playerIsHere(int x, int y);
   bool hasFloor(int x, int y);
   bool hasClimbable(int x, int y);
-  bool attackActorAt(int x, int y);
+  bool attackBurpableActorAt(int x, int y);
   int getBurps();
   void attackPlayer();
   void incBurps();
+  void setBurps(int num);
   void decBurps();
   void freezePlayer();
   void addActor(Actor* newActor);
+  int distanceToPlayerSquared(Actor* actor);
+  void setLevelFinished();
+  bool hasBarrelBurnerAt(int x, int y);
+  
 private:
 	Actor* getPlayer();
+	void setDisplayText();
+	std::string generate_stats(int score, int level, int lives, int burps);
 	Level* lev;
 	std::vector <Actor*> actors;
 	int burps;
+	bool finished;
 };
 
 #endif // STUDENTWORLD_H_

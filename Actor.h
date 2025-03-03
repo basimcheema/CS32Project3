@@ -21,6 +21,8 @@ public:
 	virtual bool attack();
 	virtual bool isPlayer();
 	virtual void getAttacked();
+	virtual bool isBarrelBurner();
+	virtual bool isBurpable();
 private:
 	StudentWorld* world;
 	bool alive;
@@ -70,6 +72,7 @@ public:
 	Bonfire(int x, int y, StudentWorld* home);
 	void doSomething();
 	bool attack();
+	bool isBarrelBurner();
 private:
 };
 
@@ -106,6 +109,7 @@ public:
 	virtual void doSomething() = 0;
 	virtual bool attack() = 0;
 	virtual void getAttacked() = 0;
+	virtual bool isBurpable();
 	int getTick();
 	void setTick(int num);
 	void incTick();
@@ -135,5 +139,35 @@ private:
 	void move();
 	int climb_state;
 
+};
+
+class Barrel : public Enemy {
+public:
+	Barrel(int x, int y, int dir, StudentWorld* home);
+	void doSomething();
+	void getAttacked();
+	bool attack();
+private:
+
+};
+
+
+class Burp : public Actor {
+public:
+	Burp(int x, int y, int dir, StudentWorld* home);
+	void doSomething();
+private:
+	int ticks;
+};
+
+
+class Kong : public Actor {
+public:
+	Kong(int x, int y, int dir, StudentWorld* home);
+	void doSomething();
+private:
+	bool flee_state;
+	int flee_ticks;
+	int barrel_ticks;
 };
 #endif // ACTOR_H_

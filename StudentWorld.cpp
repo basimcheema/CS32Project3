@@ -2,6 +2,10 @@
 #include "GameConstants.h"
 #include "Actor.h"
 #include <string>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <cmath>
 //changes
 using namespace std;
 
@@ -15,13 +19,18 @@ GameWorld* createStudentWorld(string assetPath)
 StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
+    finished = false;
     burps = 0;
 }
 
 int StudentWorld::init()
 {
+    finished = false;
     lev = new Level(assetPath());
-    Level::LoadResult result = lev->loadLevel("level00.txt");
+    ostringstream filename;
+    filename.fill('0');
+    filename << "level" << setw(2) << getLevel() << ".txt";
+    Level::LoadResult result = lev->loadLevel(filename.str());
     if (result == Level::load_fail_file_not_found)
         return GWSTATUS_PLAYER_WON;
     else if (result == Level::load_fail_bad_format)
@@ -45,9 +54,11 @@ int StudentWorld::init()
                     break;
                 case Level::left_kong:
                     cerr << x << "," << y << " is a left - facing Kong\n";
+                    actors.push_back(new Kong(x, y, GraphObject::left, this));
                     break;
                 case Level::right_kong:
                     cerr << x << "," << y << " is a right - facing Kong\n";
+                    actors.push_back(new Kong(x, y, GraphObject::right, this));
                     break;
                 case Level::fireball:
                     cerr << x << "," << y << " is a Fireball\n";
@@ -81,14 +92,20 @@ int StudentWorld::init()
         }
         return GWSTATUS_CONTINUE_GAME;
     }
+    return GWSTATUS_LEVEL_ERROR;
 }
 
 int StudentWorld::move()
 {
+    setDisplayText();
     if (!getPlayer()->isAlive()) {
         return GWSTATUS_PLAYER_DIED;
     }
-    // This code is here merely to allow the game to build, run, and terminate after you type q
+
+    if (finished) {
+        return GWSTATUS_FINISHED_LEVEL;
+    }
+
     for (int i = 0; i < actors.size(); i++) {
         if (actors[i] != nullptr)
             actors[i]->doSomething();
@@ -103,8 +120,7 @@ int StudentWorld::move()
             }
         }
     }
-    setGameStatText("helpppp");
-    
+
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -165,9 +181,9 @@ void StudentWorld::decBurps() {
     burps--;
 }
 
-bool StudentWorld::attackActorAt(int x, int y) {
+bool StudentWorld::attackBurpableActorAt(int x, int y) {
     for (int i = 0; i < actors.size(); i++) {
-        if (actors[i]->getX() == x && actors[i]->getY() == y) {
+        if (actors[i]->getX() == x && actors[i]->getY() == y && actors[i]->isBurpable()) {
             actors[i]->getAttacked();
             return true;
         }
@@ -190,3 +206,47 @@ void StudentWorld::freezePlayer() {
 void StudentWorld::addActor(Actor* newActor) {
     actors.push_back(newActor);
 }
+
+void StudentWorld::setDisplayText()
+{
+    // Next, create a string from your statistics, of the form:
+    // Score: 0000100 Level: 03 Lives: 03 Burps: 08
+    string s = generate_stats(getScore(), getLevel(), getLives(), getBurps());
+    // Finally, update the display text at the top of the screen with your
+    // newly created stats
+    setGameStatText(s); // calls our provided GameWorld::setGameStatText
+}
+
+string StudentWorld::generate_stats(int score, int level, int lives, int burps) {
+    ostringstream stats;
+   
+    stats.fill('0');
+    stats << "Score: " << setw(7) << score;
+    stats << "  Level: " << setw(2) << level;
+    stats << "  Lives: " << setw(2) << lives;
+    stats << "  Burps: " << setw(2) << burps;
+    string s = stats.str();
+    return s;
+}
+
+void StudentWorld::setBurps(int num) {
+    burps = num;
+}
+
+int StudentWorld::distanceToPlayerSquared(Actor* actor) {
+    return pow(actor->getX() - getPlayer()->getX(), 2) + pow(actor->getY() - getPlayer()->getY(), 2);
+}
+
+void StudentWorld::setLevelFinished() {
+    finished = true;
+}
+
+bool StudentWorld::hasBarrelBurnerAt(int x, int y) {
+    for (int i = 0; i < actors.size(); i++) {
+        if (actors[i]->getX() == x && actors[i]->getY() == y) {
+            return actors[i]->isBarrelBurner();
+        }
+    }
+    return false;
+}
+
